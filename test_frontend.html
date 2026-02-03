@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Watchdog Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .endpoint {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success {
+            border-left: 4px solid #4ade80;
+        }
+        .error {
+            border-left: 4px solid #f87171;
+        }
+        pre {
+            background: #f8f8f8;
+            padding: 10px;
+            overflow-x: auto;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Watchdog 测试页面</h1>
+        <p>点击下面的按钮测试各个API端点</p>
+        
+        <div class="endpoint">
+            <h3>1. Dashboard Summary</h3>
+            <button onclick="testEndpoint('/api/dashboard/summary')">测试</button>
+            <div id="dashboard-result"></div>
+        </div>
+        
+        <div class="endpoint">
+            <h3>2. Project Stats</h3>
+            <button onclick="testEndpoint('/api/projects/test-project/stats')">测试</button>
+            <div id="project-result"></div>
+        </div>
+        
+        <div class="endpoint">
+            <h3>3. Recent Activities</h3>
+            <button onclick="testEndpoint('/api/activities/recent')">测试</button>
+            <div id="activities-result"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testEndpoint(url) {
+            try {
+                // 显示加载状态
+                const button = event.target;
+                const resultDiv = document.getElementById(button.parentElement.querySelector('div').id);
+                
+                button.disabled = true;
+                button.textContent = '测试中...';
+                
+                const response = await fetch(`http://localhost:8000${url}`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p><strong>状态:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>结果:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                const button = event.target;
+                const resultDiv = document.getElementById(button.parentElement.querySelector('div').id);
+                
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p><strong>错误:</strong> ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                const button = event.target;
+                button.disabled = false;
+                button.textContent = '测试';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,638 @@
+# API 代理监测器 🔍💸
+
+> 一个会吐槽的智能API代理 - 帮你在Debug循环中守住钱包
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.108+-green.svg)](https://fastapi.tiangolo.com/)
+
+-----
+
+## 这是什么？
+
+一个**会说人话的LLM API代理服务**。它不仅帮你转发请求，还会：
+
+- 📊 实时统计你烧了多少钱（换算成咖啡/煎饼果子）
+- 🔄 检测你是否陷入了”无效的Debug死循环”
+- 💬 用毒舌会计师的口吻温馨（或不那么温馨地）提醒你
+- 🛑 必要时强制让你冷静20分钟
+
+-----
+
+## 为什么需要它？
+
+你是否遇到过这种场景：
+
+```
+你：帮我修复这个错误
+AI：试试这样改
+你：还是不行，怎么办？
+AI：那换个方法
+你：依然报错...
+AI：...
+你：（15分钟后）为什么账单增加了$5？
+```
+
+**这个工具就是为了拯救你的钱包而生的。**
+
+-----
+
+## 核心功能
+
+### 1️⃣ 智能代理
+
+- 支持 OpenAI / Anthropic / OpenRouter
+- 完全兼容原始API格式
+- 流式响应无感知
+
+### 2️⃣ 消耗审计
+
+- 实时Token统计
+- 精确成本计算（精确到分）
+- 多维度货币转化（USD → CNY → 咖啡 → 煎饼果子）
+
+### 3️⃣ 行为识别
+
+- **相似度检测**：识别重复请求（余弦相似度算法）
+- **模式识别**：区分Debug模式 vs 开发模式
+- **循环判定**：连续3次相似请求 = 红色预警
+
+### 4️⃣ 毒舌会计师
+
+根据你的”烧钱速度”，AI会计师会：
+
+|等级     |触发条件 |文案风格                 |
+|-------|-----|---------------------|
+|Level 0|正常使用 |沉默                   |
+|Level 1|效率高  |“不错哦，这钱花得有章法 ☕”      |
+|Level 2|轻度重复 |“又是这个错误？已经烧了3个煎饼果子了🥞”|
+|Level 3|严重循环 |“老板，你这是在用GPT-4炖土豆！”  |
+|Level 4|情绪化编程|**强制冷静期** 🛑 返回429    |
+
+-----
+
+## 界面截图
+
+![仪表板概览](./screenshots/dashboard.png)<!-- 截图占位区域 -->
+*仪表板概览页面 - 显示使用统计和成本分析*
+
+![项目管理](./screenshots/projects.png)<!-- 截图占位区域 -->
+*项目管理页面 - 项目特定的监控和详细分析*
+
+![统计页面](./screenshots/statistics.png)<!-- 截图占位区域 -->
+*统计页面 - 趋势分析和图表展示*
+
+![设置页面](./screenshots/settings.png)<!-- 截图占位区域 -->
+*设置页面 - 配置和偏好设置*
+
+-----
+
+## 快速开始
+
+### 📝 重要说明：测试数据
+
+**当前项目包含演示用的测试数据**，用于展示界面功能。实际使用时请删除测试数据：
+
+```bash
+# 删除测试数据文件
+rm data/watchdog.db
+
+# 重新启动服务（会自动创建空数据库）
+docker-compose restart
+# 或
+uvicorn app.main:app --reload
+```
+
+### 方式1：Docker（推荐）
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/Casper-hue/api-watchdog.git
+cd api-watchdog
+
+# 2. 配置
+cp config.yaml.example config.yaml
+# 编辑config.yaml，填入你的配置
+
+# 3. 启动
+docker-compose up -d
+
+# 4. 测试
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-openai-key" \
+  -d '{"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+### 方式2：Python直接运行
+
+```bash
+# 1. 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或
+venv\Scripts\activate     # Windows
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 配置
+cp config.yaml.example config.yaml
+# 根据需要编辑config.yaml
+
+# 4. 启动后端服务
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 5. 启动前端（在新终端中）
+cd api-watchdog
+npm install
+npm run dev
+```
+
+### 方式3：开发环境设置
+
+```bash
+# 后端开发
+cd app
+python -m uvicorn main:app --reload
+
+# 前端开发
+cd api-watchdog
+npm run dev
+```
+
+-----
+
+## 配置你的AI工具
+
+### Cursor配置
+
+```json
+// settings.json
+{
+  "cursor.api.baseUrl": "http://localhost:8000/v1",
+  "cursor.api.headers": {
+    "X-Project-ID": "my-cursor-project"
+  }
+}
+```
+
+### OpenAI SDK配置
+
+```python
+import openai
+
+openai.api_base = "http://localhost:8000/v1"
+openai.api_key = "sk-your-upstream-key"
+
+response = openai.ChatCompletion.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "Hello"}],
+    headers={"X-Project-ID": "my-python-app"}
+)
+
+# 检查顾问消息
+advisor_msg = response.response_headers.get('X-Advisor-Message')
+if advisor_msg:
+    print(f"💬 {advisor_msg}")
+```
+
+-----
+
+## 实际效果展示
+
+### 场景1：正常开发
+
+```http
+POST /v1/chat/completions
+{"model": "gpt-4o", "messages": [...]}
+
+Response:
+HTTP/1.1 200 OK
+X-Total-Cost-USD: 0.023
+X-Total-Cost-CNY: 0.17
+X-Advisor-Message: 不错哦，这钱花得有章法 ☕
+```
+
+### 场景2：检测到循环
+
+```http
+# 第1次请求
+User: "Fix this error in my code"
+
+# 第2次请求（相似度82%）
+User: "Still not working, fix it"
+
+Response:
+HTTP/1.1 200 OK
+X-Advisor-Message: 又是这个错误？已经烧了3个煎饼果子了🥞
+X-Advisor-Level: 2
+X-Similarity-Score: 0.82
+```
+
+### 场景3：触发强制冷静
+
+```http
+# 连续5次高相似度请求，消耗$5.23
+
+Response:
+HTTP/1.1 429 Too Many Requests
+Retry-After: 1200
+
+{
+  "error": {
+    "message": "检测到情绪化编程，建议休息20分钟",
+    "details": {
+      "cost_usd": 5.23,
+      "cost_cny": 38.18,
+      "equivalents": {"coffee": 2.5, "hotpot": 0.3},
+      "suggestions": ["去喝杯水", "看看官方文档"]
+    }
+  }
+}
+```
+
+-----
+
+## 项目结构
+
+```
+API-Watchdog/
+├── app/                    # 后端FastAPI应用
+│   ├── main.py            # 主应用入口
+│   ├── proxy.py           # API代理逻辑
+│   ├── analyzer.py        # 行为分析逻辑
+│   ├── advisor.py         # 幽默反馈生成
+│   ├── models.py          # 数据库模型
+│   ├── routes.py          # API路由
+│   ├── config.py          # 配置处理
+│   └── i18n.py            # 国际化支持
+├── api-watchdog/          # 前端Next.js应用
+│   ├── app/               # Next.js页面路由
+│   ├── components/        # React组件
+│   ├── lib/               # 工具函数
+│   └── public/            # 静态资源
+├── data/                  # 数据库文件
+├── tests/                 # 测试文件
+├── config.yaml            # 主配置文件
+├── requirements.txt       # Python依赖
+└── README.md              # 本文档
+```
+
+-----
+
+## 配置说明
+
+`config.yaml`中的关键配置选项：
+
+```yaml
+server:
+  host: "0.0.0.0"
+  port: 8000
+
+upstream:
+  openai:
+    base_url: "https://api.openai.com"
+  anthropic:
+    base_url: "https://api.anthropic.com"
+
+pricing:
+  exchange_rate_usd_to_cny: 7.3
+  equivalents:
+    coffee: 15
+    jianbing: 8
+
+analyzer:
+  similarity_threshold_warning: 0.65
+  similarity_threshold_critical: 0.75
+```
+
+-----
+
+## API使用
+
+### 基础代理使用
+
+```bash
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-key" \
+  -H "X-Project-ID: my-project" \
+  -d '{
+    "model": "gpt-4o-mini",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": true
+  }'
+```
+
+### 仪表板API
+
+```bash
+# 获取仪表板摘要
+curl http://localhost:8000/api/dashboard/summary
+
+# 获取项目统计
+curl http://localhost:8000/api/projects/my-project/stats
+
+# 获取最近活动
+curl http://localhost:8000/api/activities/recent
+```
+
+-----
+
+## 功能详解
+
+### 实时成本跟踪
+- 监控所有API调用的token使用情况
+- 基于当前定价计算成本
+- 提供成本等价物（咖啡、餐食等）
+
+### 智能行为分析
+- 使用余弦相似度检测重复模式
+- 区分调试与开发模式
+- 提供可操作的洞察
+
+### 幽默反馈系统
+- 基于使用模式的多级反馈
+- 文化相关的成本比较
+- 可选的使用限制功能
+
+-----
+
+## 开发
+
+### 环境要求
+- Python 3.11+
+- Node.js 18+
+- SQLite（已包含）
+
+### 运行测试
+
+```bash
+# 后端测试
+cd app
+python -m pytest
+
+# 前端测试
+cd api-watchdog
+npm test
+```
+
+### 生产环境构建
+
+```bash
+# 前端构建
+cd api-watchdog
+npm run build
+
+# 后端已准备好生产环境
+# 使用uvicorn的--workers参数用于生产
+uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
+```
+
+-----
+
+## 部署
+
+### Docker部署
+
+```bash
+docker-compose -f docker-compose.production.yml up -d
+```
+
+### 云部署
+
+查看[部署指南](./docs/DEPLOYMENT_GUIDE.md)获取详细部署说明：
+- AWS ECS
+- Google Cloud Run
+- Vercel（前端）
+
+-----
+
+## 贡献
+
+欢迎贡献！请查看我们的贡献指南了解详情。
+
+### 代码风格
+- 后端：遵循PEP 8标准
+- 前端：使用严格模式的TypeScript
+- 提交信息：使用约定式提交格式
+
+### 测试
+- 为新功能编写单元测试
+- 提交PR前确保所有测试通过
+- 包含API端点的集成测试
+
+-----
+
+## 许可证
+
+本项目采用MIT许可证 - 详见LICENSE文件。
+
+-----
+
+## 致谢
+
+- 后端使用[FastAPI](https://fastapi.tiangolo.com/)构建
+- 前端由[Next.js](https://nextjs.org/)和[Tailwind CSS](https://tailwindcss.com/)驱动
+- 图表由[Recharts](http://recharts.org/)提供
+- UI组件来自[shadcn/ui](https://ui.shadcn.com/)
+
+-----
+
+## 支持
+
+如果遇到问题或有疑问：
+
+1. 查看[FAQ部分](#)（即将推出）
+2. 搜索现有[issues](https://github.com/Casper-hue/api-watchdog/issues)
+3. 创建包含详细信息的新issue
+
+-----
+
+## 路线图
+
+- [ ] 多用户支持
+- [ ] 高级分析功能
+- [ ] 移动应用
+- [ ] 浏览器扩展
+- [ ] 团队协作功能
+
+*最后更新：2025-02-03*
+    │ Advisor  │ ← 文案生成
+    └─────┬────┘
+          │
+          ▼
+    ┌──────────┐
+    │   DB     │ ← SQLite/PostgreSQL
+    └──────────┘
+```
+
+**核心组件**：
+
+- **FastAPI**：Web框架，处理HTTP请求
+- **httpx**：异步HTTP客户端，转发到上游
+- **SQLAlchemy**：ORM，数据持久化
+- **scikit-learn**：相似度计算
+
+-----
+
+## 项目结构
+
+```
+api-watchdog/
+├── app/
+│   ├── main.py              # FastAPI入口
+│   ├── proxy.py             # 代理转发逻辑
+│   ├── analyzer.py          # 行为分析器
+│   ├── advisor.py           # 文案生成器
+│   ├── models.py            # 数据模型
+│   └── config.py            # 配置加载
+├── tests/                   # 单元测试
+├── data/                    # SQLite数据库
+├── logs/                    # 运行日志
+├── config.yaml              # 配置文件
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── README.md
+```
+
+-----
+
+## 配置说明
+
+### 关键配置项
+
+```yaml
+# config.yaml
+server:
+  port: 8000
+
+pricing:
+  exchange_rate_usd_to_cny: 7.3  # 汇率
+  models:
+    gpt-4o:
+      input: 0.0025   # 美元/1K tokens
+      output: 0.010
+
+analyzer:
+  similarity_threshold_warning: 0.75   # 相似度警告线
+  similarity_threshold_critical: 0.85  # 严重警告线
+
+advisor:
+  enable_rate_limit: true              # 是否启用强制限流
+  max_cost_per_hour_usd: 5.0           # 单项目每小时上限
+```
+
+完整配置参考：[config.yaml](./config.yaml)
+
+-----
+
+## 文档导航
+
+- 📘 [技术规范](./docs/PROJECT_SPEC.md) - 详细的架构设计
+- 🛠️ [实现指南](./docs/IMPLEMENTATION_GUIDE.md) - 给Cursor/Trae的开发步骤
+- 📖 [API参考](./docs/API_REFERENCE.md) - 完整的接口文档
+- 🚀 [部署指南](./docs/DEPLOYMENT_GUIDE.md) - 从开发到生产
+- 💬 [文案库](./docs/MESSAGES.md) - 所有毒舌台词
+
+-----
+
+## 常见问题
+
+**Q: 会影响请求速度吗？**  
+A: 几乎没有影响。监控逻辑在后台异步执行，代理层延迟<50ms。
+
+**Q: 支持哪些LLM服务商？**  
+A: 目前支持OpenAI、Anthropic、OpenRouter。可轻松扩展。
+
+**Q: 数据存在哪里？**  
+A: 本地SQLite（开发）或PostgreSQL（生产）。你的Prompt内容不会被存储。
+
+**Q: 文案太毒舌了怎么办？**  
+A: 在`config.yaml`中自定义文案，或者直接关闭：`advisor.enable: false`
+
+**Q: 如何处理多项目？**  
+A: 使用`X-Project-ID` Header区分项目，统计和限流都是按项目隔离的。
+
+**Q: 可以商用吗？**  
+A: MIT协议，随意使用。但请注意保护用户隐私。
+
+-----
+
+## 贡献指南
+
+欢迎提交Issue和PR！
+
+### 开发流程
+
+1. Fork本仓库
+1. 创建特性分支：`git checkout -b feature/xxx`
+1. 提交代码：`git commit -am 'Add xxx'`
+1. 推送分支：`git push origin feature/xxx`
+1. 提交PR
+
+### 代码规范
+
+- 遵循PEP 8
+- 添加类型注解
+- 编写单元测试
+- 更新文档
+
+-----
+
+## 路线图
+
+- [x] v1.0 - MVP功能
+  - [x] 基础代理
+  - [x] Token统计
+  - [x] 相似度检测
+  - [x] 文案系统
+- [ ] v1.1 - 多Provider支持
+  - [ ] Anthropic完整支持
+  - [ ] OpenRouter集成
+  - [ ] Gemini支持
+- [ ] v1.2 - 可视化
+  - [ ] Web Dashboard
+  - [ ] 实时图表
+  - [ ] 历史趋势分析
+- [ ] v2.0 - 智能化
+  - [ ] AI驱动的模型推荐
+  - [ ] 成本预测
+  - [ ] 自动优化Prompt
+
+-----
+
+## 致谢
+
+灵感来源于每一个在Debug循环中烧钱的开发者（包括我自己）。
+
+特别感谢：
+
+- [FastAPI](https://fastapi.tiangolo.com/) - 优雅的Web框架
+- [OpenAI](https://openai.com/) - 让我们有钱可烧
+
+-----
+
+## 许可证
+
+[MIT License](./LICENSE)
+
+-----
+
+## 联系方式
+
+- 作者：Shannon Young
+- 邮箱：shannon_young1@outlook.com
+- 项目主页：https://github.com/Casper-hue/api-watchdog
+
+-----
+
+**记住：能用便宜模型解决的问题，就别浪费钱用claude opus了！💸**
+
+-----
+
+<p align="center">
+  Made with ☕ and 🥞 by developers who's broke
+</p>

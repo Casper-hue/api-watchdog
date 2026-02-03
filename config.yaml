@@ -1,0 +1,85 @@
+server:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  workers: 4
+
+upstream:
+  openai:
+    base_url: "https://api.openai.com"
+    timeout: 120
+  anthropic:
+    base_url: "https://api.anthropic.com"
+    timeout: 120
+  openrouter:
+    base_url: "https://openrouter.ai/api"
+    timeout: 120
+  custom:
+    base_url: ""
+    timeout: 60
+
+pricing:
+  exchange_rate_usd_to_cny: 7.3
+  equivalents:
+    coffee: 15
+    jianbing: 8
+    meal: 50
+    hotpot: 120
+  models:
+    gpt-4o:
+      input: 0.0025
+      output: 0.010
+    gpt-4o-mini:
+      input: 0.00015
+      output: 0.0006
+    o1-preview:
+      input: 0.015
+      output: 0.06
+    o1-mini:
+      input: 0.003
+      output: 0.012
+    claude-opus-4-20250514:
+      input: 0.015
+      output: 0.075
+    claude-sonnet-4-20250514:
+      input: 0.003
+      output: 0.015
+    claude-sonnet-3-5-20241022:
+      input: 0.003
+      output: 0.015
+    claude-haiku-3-5-20241022:
+      input: 0.0008
+      output: 0.0024
+privacy:
+  store_request_content: false
+  similarity_method: "hash"
+  cache_ttl_seconds: 3600
+  anonymize_project_id: true
+
+analyzer:
+  similarity_threshold_warning: 0.65
+  similarity_threshold_critical: 0.75
+  pattern_keywords:
+    debug:
+      - "error"
+      - "bug"
+      - "fix"
+      - "修复"
+      - "报错"
+      - "exception"
+      - "traceback"
+    repeat:
+      - "same"
+      - "still"
+      - "一样"
+      - "还是"
+      - "again"
+      - "重复"
+      - "why"
+
+advisor:
+  enable: true
+  enable_rate_limit: true
+  max_cost_per_hour_usd: 5.0
+  cooldown_minutes: 20
+  webhook_url: ""
