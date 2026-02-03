@@ -18,7 +18,7 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: 'API_MONITOR // SYSTEM v1.0',
+  title: 'API_WATCHDOG // SYSTEM v1.0',
   description: 'Industrial LLM API Consumption Monitoring System',
   generator: 'v0.app',
   icons: {

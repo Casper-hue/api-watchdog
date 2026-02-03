@@ -1,4 +1,4 @@
-# API 代理监测器 🔍💸
+# API Watchdog 🔍💸
 
 > 一个会吐槽的智能API代理 - 帮你在Debug循环中守住钱包
 
@@ -474,29 +474,6 @@ docker-compose -f docker-compose.production.yml up -d
 - **httpx**：异步HTTP客户端，转发到上游
 - **SQLAlchemy**：ORM，数据持久化
 - **scikit-learn**：相似度计算
-
------
-
-## 项目结构
-
-```
-api-watchdog/
-├── app/
-│   ├── main.py              # FastAPI入口
-│   ├── proxy.py             # 代理转发逻辑
-│   ├── analyzer.py          # 行为分析器
-│   ├── advisor.py           # 文案生成器
-│   ├── models.py            # 数据模型
-│   └── config.py            # 配置加载
-├── tests/                   # 单元测试
-├── data/                    # SQLite数据库
-├── logs/                    # 运行日志
-├── config.yaml              # 配置文件
-├── requirements.txt
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
 
 -----
 

@@ -61,7 +61,7 @@ export function AppShell({ children, onRefreshSign }: { children: React.ReactNod
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-bold tracking-widest text-primary text-glow-amber">
-                  API_MONITOR
+                  API_WATCHDOG
                 </span>
                 <span className="embossed-label text-muted-foreground">
                   SYS v1.0.0
@@ -137,7 +137,7 @@ export function AppShell({ children, onRefreshSign }: { children: React.ReactNod
             <Terminal className="h-4 w-4 text-primary text-glow-amber" />
           </div>
           <span className="text-xs font-bold tracking-widest text-primary text-glow-amber">
-            API_MONITOR
+            API_WATCHDOG
           </span>
         </Link>
         

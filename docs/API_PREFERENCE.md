@@ -1,6 +1,6 @@
 # API接口文档
 
-本文档定义了API代理监测器的所有HTTP接口。
+本文档定义了API Watchdog的所有HTTP接口。
 
 -----
 
