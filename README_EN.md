@@ -1,3 +1,15 @@
+```text
+         /|    |\
+        / |    | \
+       /  |____|  \           [ ⚡️ NEURAL_LINK: ESTABLISHED ]
+      |            |          ------------------------------
+      | (X)    (X) |          >> STATUS: KILL_PROCESS_ON_SIGHT
+      |    |  |    |          >> TARGET: REPEATED_API_CALLS
+       \    xx    /           >> ACTION: NULL_POINTER_STRIKE
+       | \__/\__/ |
+       |-_-_-0_-_-|           "Your budget is my priority."
+      /            \
+```
 # API Watchdog 🔍💸
 
 > A Smart API Proxy with Personality - Protecting Your Wallet During Debugging Cycles

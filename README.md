@@ -1,3 +1,15 @@
+```text
+         /|    |\
+        / |    | \
+       /  |____|  \           [ ⚡️ NEURAL_LINK: ESTABLISHED ]
+      |            |          ------------------------------
+      | (X)    (X) |          >> STATUS: KILL_PROCESS_ON_SIGHT
+      |    |  |    |          >> TARGET: REPEATED_API_CALLS
+       \    xx    /           >> ACTION: NULL_POINTER_STRIKE
+       | \__/\__/ |
+       |-_-_-0_-_-|           "Your budget is my priority."
+      /            \
+```
 # API Watchdog 🔍💸
 
 > 一个会吐槽的智能API代理 - 帮你在Debug循环中守住钱包
@@ -5,6 +17,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.108+-green.svg)](https://fastapi.tiangolo.com/)
+![Vibe](https://img.shields.io/badge/Vibe-Toxic-ff69b4.svg?style=flat-square) > ![Coffee](https://img.shields.io/badge/Coffee-Required-brown.svg?style=flat-square)
+
 [English Version](README_EN.md)
 
 -----
