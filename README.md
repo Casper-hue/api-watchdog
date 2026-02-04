@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.108+-green.svg)](https://fastapi.tiangolo.com/)
+[English Version](README_EN.md)
 
 -----
 
@@ -13,7 +14,7 @@
 一个**会说人话的LLM API代理服务**。它不仅帮你转发请求，还会：
 
 - 📊 实时统计你烧了多少钱（换算成咖啡/煎饼果子）
-- 🔄 检测你是否陷入了”无效的Debug死循环”
+- 🔄 检测你是否陷入了"无效的Debug死循环"
 - 💬 用毒舌会计师的口吻温馨（或不那么温馨地）提醒你
 - 🛑 必要时强制让你冷静20分钟
 
@@ -59,14 +60,14 @@ AI：...
 
 ### 4️⃣ 毒舌会计师
 
-根据你的”烧钱速度”，AI会计师会：
+根据你的"烧钱速度"，AI会计师会：
 
 |等级     |触发条件 |文案风格                 |
 |-------|-----|---------------------|
 |Level 0|正常使用 |沉默                   |
-|Level 1|效率高  |“不错哦，这钱花得有章法 ☕”      |
-|Level 2|轻度重复 |“又是这个错误？已经烧了3个煎饼果子了🥞”|
-|Level 3|严重循环 |“老板，你这是在用GPT-4炖土豆！”  |
+|Level 1|效率高  |"不错哦，这钱花得有章法 ☕"      |
+|Level 2|轻度重复 |"又是这个错误？已经烧了3个煎饼果子了🥞"|
+|Level 3|严重循环 |"老板，你这是在用GPT-4炖土豆！"  |
 |Level 4|情绪化编程|**强制冷静期** 🛑 返回429    |
 
 -----
@@ -340,25 +341,6 @@ curl http://localhost:8000/api/activities/recent
 
 -----
 
-## 功能详解
-
-### 实时成本跟踪
-- 监控所有API调用的token使用情况
-- 基于当前定价计算成本
-- 提供成本等价物（咖啡、餐食等）
-
-### 智能行为分析
-- 使用余弦相似度检测重复模式
-- 区分调试与开发模式
-- 提供可操作的洞察
-
-### 幽默反馈系统
-- 基于使用模式的多级反馈
-- 文化相关的成本比较
-- 可选的使用限制功能
-
------
-
 ## 开发
 
 ### 环境要求
@@ -425,140 +407,6 @@ docker-compose -f docker-compose.production.yml up -d
 
 -----
 
-## 许可证
-
-本项目采用MIT许可证 - 详见LICENSE文件。
-
------
-
-## 致谢
-
-- 后端使用[FastAPI](https://fastapi.tiangolo.com/)构建
-- 前端由[Next.js](https://nextjs.org/)和[Tailwind CSS](https://tailwindcss.com/)驱动
-- 图表由[Recharts](http://recharts.org/)提供
-- UI组件来自[shadcn/ui](https://ui.shadcn.com/)
-
------
-
-## 支持
-
-如果遇到问题或有疑问：
-
-1. 查看[FAQ部分](#)（即将推出）
-2. 搜索现有[issues](https://github.com/Casper-hue/api-watchdog/issues)
-3. 创建包含详细信息的新issue
-
------
-
-## 路线图
-
-- [ ] 多用户支持
-- [ ] 高级分析功能
-- [ ] 移动应用
-- [ ] 浏览器扩展
-- [ ] 团队协作功能
-
-*最后更新：2025-02-03*
-    │ Advisor  │ ← 文案生成
-    └─────┬────┘
-          │
-          ▼
-    ┌──────────┐
-    │   DB     │ ← SQLite/PostgreSQL
-    └──────────┘
-```
-
-**核心组件**：
-
-- **FastAPI**：Web框架，处理HTTP请求
-- **httpx**：异步HTTP客户端，转发到上游
-- **SQLAlchemy**：ORM，数据持久化
-- **scikit-learn**：相似度计算
-
------
-
-## 配置说明
-
-### 关键配置项
-
-```yaml
-# config.yaml
-server:
-  port: 8000
-
-pricing:
-  exchange_rate_usd_to_cny: 7.3  # 汇率
-  models:
-    gpt-4o:
-      input: 0.0025   # 美元/1K tokens
-      output: 0.010
-
-analyzer:
-  similarity_threshold_warning: 0.75   # 相似度警告线
-  similarity_threshold_critical: 0.85  # 严重警告线
-
-advisor:
-  enable_rate_limit: true              # 是否启用强制限流
-  max_cost_per_hour_usd: 5.0           # 单项目每小时上限
-```
-
-完整配置参考：[config.yaml](./config.yaml)
-
------
-
-## 文档导航
-
-- 📘 [技术规范](./docs/PROJECT_SPEC.md) - 详细的架构设计
-- 🛠️ [实现指南](./docs/IMPLEMENTATION_GUIDE.md) - 给Cursor/Trae的开发步骤
-- 📖 [API参考](./docs/API_REFERENCE.md) - 完整的接口文档
-- 🚀 [部署指南](./docs/DEPLOYMENT_GUIDE.md) - 从开发到生产
-- 💬 [文案库](./docs/MESSAGES.md) - 所有毒舌台词
-
------
-
-## 常见问题
-
-**Q: 会影响请求速度吗？**  
-A: 几乎没有影响。监控逻辑在后台异步执行，代理层延迟<50ms。
-
-**Q: 支持哪些LLM服务商？**  
-A: 目前支持OpenAI、Anthropic、OpenRouter。可轻松扩展。
-
-**Q: 数据存在哪里？**  
-A: 本地SQLite（开发）或PostgreSQL（生产）。你的Prompt内容不会被存储。
-
-**Q: 文案太毒舌了怎么办？**  
-A: 在`config.yaml`中自定义文案，或者直接关闭：`advisor.enable: false`
-
-**Q: 如何处理多项目？**  
-A: 使用`X-Project-ID` Header区分项目，统计和限流都是按项目隔离的。
-
-**Q: 可以商用吗？**  
-A: MIT协议，随意使用。但请注意保护用户隐私。
-
------
-
-## 贡献指南
-
-欢迎提交Issue和PR！
-
-### 开发流程
-
-1. Fork本仓库
-1. 创建特性分支：`git checkout -b feature/xxx`
-1. 提交代码：`git commit -am 'Add xxx'`
-1. 推送分支：`git push origin feature/xxx`
-1. 提交PR
-
-### 代码规范
-
-- 遵循PEP 8
-- 添加类型注解
-- 编写单元测试
-- 更新文档
-
------
-
 ## 路线图
 
 - [x] v1.0 - MVP功能
@@ -597,19 +445,3 @@ A: MIT协议，随意使用。但请注意保护用户隐私。
 [MIT License](./LICENSE)
 
 -----
-
-## 联系方式
-
-- 作者：Shannon Young
-- 邮箱：shannon_young1@outlook.com
-- 项目主页：https://github.com/Casper-hue/api-watchdog
-
------
-
-**记住：能用便宜模型解决的问题，就别浪费钱用claude opus了！💸**
-
------
-
-<p align="center">
-  Made with ☕ and 🥞 by developers who's broke
-</p>

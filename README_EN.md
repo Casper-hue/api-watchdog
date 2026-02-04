@@ -254,79 +254,6 @@ Retry-After: 1200
 
 -----
 
-## Advanced Features
-
-### Statistics Query
-
-```bash
-# Check project consumption
-curl "http://localhost:8000/api/stats?project_id=my-app&hours=24"
-
-# Response example
-{
-  "total_cost_usd": 3.42,
-  "equivalents": {
-    "coffee_cups": 1.66,
-    "pancake_sets": 3.12
-  },
-  "behavior_analysis": {
-    "debug_rate": 0.34,
-    "efficiency_rating": "B"
-  }
-}
-```
-
-### Webhook Notifications
-
-Configure in `config.yaml`:
-
-```yaml
-advisor:
-  enable_webhook: true
-  webhook:
-    url: "https://your-domain.com/api/notify"
-```
-
-When Level 2-4 is triggered, POST notifications will be sent to your server.
-
------
-
-## Technical Architecture
-
-```
-┌─────────────────┐
-│   Cursor/IDE    │
-└────────┬────────┘
-         │ HTTP Request
-         ▼
-┌─────────────────┐
-│  API Gateway    │ ← FastAPI
-│  (Port 8000)    │
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-┌────────┐ ┌──────────┐
-│Analyzer│ │ Counter  │
-│(Behavior)│ │ (Token)  │
-└────┬───┘ └────┬─────┘
-     │          │
-     └────┬─────┘
-          ▼
-    ┌──────────┐
-    │ Advisor  │ ← Message Generation
-    └─────┬────┘
-          │
-          ▼
-┌─────────────────┐
-│ Upstream LLM    │
-│ (OpenAI/Claude) │
-└─────────────────┘
-```
-
------
-
 ## Project Structure
 
 ```
@@ -498,62 +425,47 @@ We welcome contributions! Please see our contributing guidelines for details.
 
 -----
 
-## License
+## Roadmap
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- [x] v1.0 - MVP Features
+  - [x] Basic proxy functionality
+  - [x] Token counting and cost calculation
+  - [x] Similarity detection algorithm
+  - [x] Humorous message system
+- [ ] v1.1 - Multi-Provider Support
+  - [ ] Complete Anthropic support
+  - [ ] OpenRouter integration
+  - [ ] Gemini support
+- [ ] v1.2 - Visualization
+  - [ ] Web Dashboard
+  - [ ] Real-time charts
+  - [ ] Historical trend analysis
+- [ ] v2.0 - Intelligence
+  - [ ] AI-driven model recommendations
+  - [ ] Cost prediction
+  - [ ] Automatic prompt optimization
 
 -----
 
 ## Acknowledgments
 
-- Built with [FastAPI](https://fastapi.tiangolo.com/) for the backend
-- Frontend powered by [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/)
-- Charts powered by [Recharts](http://recharts.org/)
-- UI components from [shadcn/ui](https://ui.shadcn.com/)
+Inspired by every developer who spent hours debugging and burning money on API calls (including myself).
+
+Special thanks to:
+
+- [FastAPI](https://fastapi.tiangolo.com/) - Elegant web framework
+- [OpenAI](https://openai.com/) - For making this tool necessary
 
 -----
 
-## Support
+## License
 
-If you encounter any issues or have questions:
-
-1. Check the [FAQ section](#) (coming soon)
-2. Search existing [issues](https://github.com/Casper-hue/api-watchdog/issues)
-3. Create a new issue with detailed information
+[MIT License](./LICENSE)
 
 -----
 
-## Roadmap
-
-- [ ] Multi-user support
-- [ ] Advanced analytics
-- [ ] Mobile app
-- [ ] Browser extension
-- [ ] Team collaboration features
-
-## Thanks
-
-Thanks to every developer who spent hours debugging and burning money on API calls!(Mostly me)
-
-Many thanks to：
-
-- [FastAPI](https://fastapi.tiangolo.com/) - elegant web framework
-- [OpenAI](https://openai.com/) - who took away my money
-
------
-
-## Contact
-
-- Author: Shannon Young
-- Email: shannon_young1@outlook.com
-- Project Home: https://github.com/Casper-hue/api-watchdog
-
------
-
-**Remember: Use cheaper models for problems you can solve!(Yes I meant do NOT use claude opus on that) 💸**
-
------
+**Remember: Use cheaper models for problems you can solve! (Yes, I meant do NOT use Claude Opus for that) 💸**
 
 <p align="center">
-  Made with ☕ and 🥞 by developers who's broke
+  Made with ☕ and 🥞 by developers who are broke
 </p>
