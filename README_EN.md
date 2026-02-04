@@ -478,6 +478,8 @@ Special thanks to:
 
 **Remember: Use cheaper models for problems you can solve! (Yes, I meant do NOT use Claude Opus for that) 💸**
 
-<p align="center">
-  Made with ☕ and 🥞 by developers who are broke
-</p>
+```
+    |\__/,|   (`\
+  _.|o o  |_   ) )     "Buy us a coffee?"
+ -(((---(((--------
+ ```

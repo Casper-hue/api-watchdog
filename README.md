@@ -1,5 +1,5 @@
 ```text
-         /|    |\
+         /|    |\                                                 
         / |    | \
        /  |____|  \           [ ⚡️ NEURAL_LINK: ESTABLISHED ]
       |            |          ------------------------------
@@ -10,6 +10,7 @@
        |-_-_-0_-_-|           "Your budget is my priority."
       /            \
 ```
+
 # API Watchdog 🔍💸
 
 > 一个会吐槽的智能API代理 - 帮你在Debug循环中守住钱包
@@ -459,3 +460,8 @@ docker-compose -f docker-compose.production.yml up -d
 [MIT License](./LICENSE)
 
 -----
+```
+    |\__/,|   (`\
+  _.|o o  |_   ) )     "Buy us a coffee?"
+ -(((---(((--------
+ ```
