@@ -5,8 +5,8 @@
       |            |          ------------------------------
       | (X)    (X) |          >> STATUS: KILL_PROCESS_ON_SIGHT
       |    |  |    |          >> TARGET: REPEATED_API_CALLS
-       \    xx    /           >> ACTION: NULL_POINTER_STRIKE
-       | \__/\__/ |
+       \ .` xx `. /           >> ACTION: NULL_POINTER_STRIKE
+       | \_/_\_/  |
        |-_-_-0_-_-|           "Your budget is my priority."
       /            \
 ```

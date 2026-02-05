@@ -118,6 +118,10 @@ if os.path.exists(config_file):
                         settings.pricing.coffee_price_cny = equiv['coffee']
                     if 'jianbing' in equiv:
                         settings.pricing.jianbing_price_cny = equiv['jianbing']
+                    if 'meal' in equiv:
+                        settings.pricing.meal_price_cny = equiv['meal']
+                    if 'hotpot' in equiv:
+                        settings.pricing.hotpot_price_cny = equiv['hotpot']
                 if 'models' in pricing_config:
                     settings.pricing.models = pricing_config['models']
             

@@ -48,8 +48,18 @@ async def chat_proxy(request: Request):
     try:
         response_data, status_code = await proxy_request(body, dict(request.headers), provider)
         
+        # Handle rate limiting (429) and error responses
+        if status_code == 429:
+            response = JSONResponse(content=response_data, status_code=429)
+            # Add Retry-After header for rate limiting
+            response.headers["Retry-After"] = str(settings.advisor.cooldown_minutes * 60)
+            if "error" in response_data and "details" in response_data["error"]:
+                advisor_msg = response_data["error"].get("message", "Rate limit exceeded")
+                response.headers["X-Advisor-Message"] = advisor_msg
+            return response
+        
         # Return the proxied response with custom headers
-        response = JSONResponse(content=response_data)
+        response = JSONResponse(content=response_data, status_code=status_code)
         
         # Add custom headers if available in response_data
         if isinstance(response_data, dict):
@@ -72,12 +82,11 @@ async def chat_proxy(request: Request):
             content={
                 "error": {
                     "message": "Internal server error during proxying",
-                    "type": "internal_error"
+                    "type": "internal_error",
+                    "details": str(e)
                 }
             }
         )
-    except Exception as e:
-        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

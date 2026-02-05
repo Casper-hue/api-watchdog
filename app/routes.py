@@ -736,42 +736,6 @@ def post_feedback(feedback: Dict[str, Any], db: Session = Depends(get_db)):
     }
 
 
-@router.get("/api/projects")
-def get_all_projects(db: Session = Depends(get_db)):
-    """
-    Get all projects with their aggregated statistics
-    """
-    # Get all unique project IDs from requests
-    project_ids = db.query(Request.project_id).distinct().all()
-    
-    projects = []
-    for project_id_tuple in project_ids:
-        project_id = project_id_tuple[0]
-        
-        # Get project stats
-        project_requests = db.query(Request).filter(Request.project_id == project_id).all()
-        
-        if project_requests:
-            # Calculate aggregated stats for this project
-            total_cost_usd = sum(req.completion_tokens * settings.pricing.get_model_price_usd(req.model)['output'] + 
-                                req.prompt_tokens * settings.pricing.get_model_price_usd(req.model)['input'] 
-                                for req in project_requests)
-            total_cost_cny = total_cost_usd * settings.pricing.exchange_rate_usd_to_cny
-            
-            # Calculate equivalents
-            equivalents = calculate_equivalents(total_cost_cny)
-            
-            project_info = {
-                "id": project_id,
-                "name": project_id.replace('-', ' ').title(),  # Convert ID to readable name
-                "createdAt": min(req.timestamp for req in project_requests).strftime('%Y-%m-%d'),
-                "totalCost": round(total_cost_usd, 2),
-                "totalCostCNY": round(total_cost_cny, 2),
-                "equivalent": equivalents["meal_equivalent"]
-            }
-            projects.append(project_info)
-    
-    return projects
 
 
 @router.delete("/api/projects/{project_id}")

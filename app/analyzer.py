@@ -6,6 +6,7 @@ from .models import Request, SessionLocal
 from sqlalchemy.orm import Session
 from .config import settings
 from datetime import datetime, timedelta
+import hashlib
 
 # 缓存系统
 class EfficiencyCache:
@@ -127,7 +128,12 @@ def calculate_similarity(text1: str, text2: str) -> float:
         word_overlap = 0.0
     
     # Method 3: Keyword matching (for debugging/error scenarios)
-    debug_keywords = ["error", "bug", "fix", "修复", "报错", "exception", "traceback"]
+    # Include common exception names so debugging loops are detected more reliably.
+    debug_keywords = [
+        "error", "bug", "fix", "修复", "报错", "exception", "traceback",
+        "typeerror", "valueerror", "keyerror", "attributeerror", "indexerror",
+        "nullpointer", "segfault",
+    ]
     keyword_match = 0.0
     
     if any(keyword in text1.lower() and keyword in text2.lower() for keyword in debug_keywords):
@@ -147,6 +153,14 @@ def calculate_similarity(text1: str, text2: str) -> float:
         keyword_match * 0.2 + 
         length_similarity * 0.1
     )
+
+    # Method 5: Exception-name overlap (strong signal for debugging loops)
+    # Example: "TypeError" repeated across attempts should raise similarity.
+    exc_pattern = re.compile(r"\b[a-zA-Z_]*?(?:error|exception)\b", re.IGNORECASE)
+    exc1 = set(m.group(0).lower() for m in exc_pattern.finditer(text1))
+    exc2 = set(m.group(0).lower() for m in exc_pattern.finditer(text2))
+    if exc1 and exc2 and (exc1 & exc2):
+        combined_similarity = min(1.0, combined_similarity + 0.35)
     
     # Boost similarity for highly repetitive patterns
     if "same" in text1.lower() and "same" in text2.lower():
@@ -156,6 +170,68 @@ def calculate_similarity(text1: str, text2: str) -> float:
         combined_similarity = min(1.0, combined_similarity + 0.15)
     
     return float(combined_similarity)
+
+
+def compute_simhash_hex(text: str, bits: int = 64) -> str:
+    """
+    Compute a lightweight SimHash fingerprint (hex string).
+    Used when privacy settings disallow storing raw prompt content.
+    """
+    if not text:
+        return "0" * (bits // 4)
+
+    # Basic tokenization; keeps it dependency-free.
+    tokens = re.findall(r"\b\w+\b", text.lower())
+    if not tokens:
+        return "0" * (bits // 4)
+
+    v = [0] * bits
+    for tok in tokens:
+        # Stable 64-bit token hash
+        h = int.from_bytes(hashlib.md5(tok.encode("utf-8")).digest()[:8], "big", signed=False)
+        for i in range(bits):
+            bit = (h >> i) & 1
+            v[i] += 1 if bit else -1
+
+    fp = 0
+    for i, score in enumerate(v):
+        if score > 0:
+            fp |= (1 << i)
+
+    return f"{fp:0{bits // 4}x}"
+
+
+def simhash_similarity(simhash_hex_a: str, simhash_hex_b: str, bits: int = 64) -> float:
+    """
+    Similarity based on Hamming distance of two simhash hex strings.
+    Returns 0..1.
+    """
+    try:
+        a = int(simhash_hex_a, 16)
+        b = int(simhash_hex_b, 16)
+    except (TypeError, ValueError):
+        return 0.0
+
+    x = a ^ b
+    # Python 3.8+: int.bit_count()
+    dist = x.bit_count()
+    return max(0.0, min(1.0, 1.0 - (dist / bits)))
+
+
+def calculate_similarity_privacy_aware(plain_text: str, stored_fingerprint_or_text: str) -> float:
+    """
+    If stored value looks like a simhash fingerprint, compare via hamming similarity.
+    Otherwise fall back to normal text similarity.
+    """
+    if not plain_text or not stored_fingerprint_or_text:
+        return 0.0
+
+    stored = stored_fingerprint_or_text.strip().lower()
+    # 64-bit simhash hex
+    if re.fullmatch(r"[0-9a-f]{16}", stored):
+        return simhash_similarity(compute_simhash_hex(plain_text), stored, bits=64)
+
+    return calculate_similarity(plain_text, stored_fingerprint_or_text)
 
 
 def calculate_topic_drift(messages: List[str]) -> float:
@@ -258,7 +334,7 @@ def count_similar_requests(recent_requests: List[Request], similarity_threshold:
         prev_content = getattr(recent_requests[i-1], 'prompt_text', '')
         
         if current_content and prev_content:
-            similarity = calculate_similarity(current_content, prev_content)
+            similarity = calculate_similarity_privacy_aware(current_content, prev_content)
             if similarity >= similarity_threshold:
                 similar_count += 1
             else:
@@ -310,24 +386,62 @@ def analyze_behavior(project_id: str, messages: List[Dict[str, str]], model: str
         if msg.get("role") == "user":
             current_user_msg = msg.get("content", "")
             break
+
+    # Stateless fallback inputs (used when DB has no recent history)
+    stateless_user_texts: List[str] = [
+        m.get("content", "")
+        for m in messages
+        if m.get("role") == "user" and m.get("content")
+    ]
+    stateless_repeat_count: Optional[int] = None
     
     # Get recent messages for topic drift analysis
-    recent_messages = [getattr(req, 'prompt_text', '') for req in recent_requests if hasattr(req, 'prompt_text')]
-    recent_messages.append(current_user_msg)
+    if recent_requests:
+        recent_messages = [getattr(req, 'prompt_text', '') for req in recent_requests if hasattr(req, 'prompt_text')]
+        recent_messages.append(current_user_msg)
+    else:
+        # When there is no DB history, topic drift should be computed across the provided sequence.
+        recent_messages = stateless_user_texts[:] if stateless_user_texts else [current_user_msg]
     
     # === Dimension 1: Enhanced similarity analysis ===
     max_similarity = 0.0
     similar_requests_count = 0
-    
+
+    # Prefer DB history when available; otherwise fall back to the provided message sequence.
+    # This makes the analyzer testable and allows stateless callers to still get meaningful results.
+    # Threshold used in stateless mode (slightly lower to match short prompts)
+    stateless_sim_threshold = 0.55
+
     if recent_requests:
         for req in recent_requests:
             if hasattr(req, 'prompt_text') and req.prompt_text:
-                similarity = calculate_similarity(current_user_msg, req.prompt_text)
+                similarity = calculate_similarity_privacy_aware(current_user_msg, req.prompt_text)
                 max_similarity = max(max_similarity, similarity)
-                
+
                 # Count requests with moderate similarity (lower threshold for better sensitivity)
                 if similarity > 0.6:  # Lower threshold for counting
                     similar_requests_count += 1
+    else:
+        # Stateless mode: use messages passed in (treat as a conversation/request sequence)
+        user_texts = stateless_user_texts
+        if len(user_texts) >= 2:
+            last_text = user_texts[-1]
+            previous_texts = user_texts[:-1]
+            for prev in previous_texts:
+                similarity = calculate_similarity(last_text, prev)
+                max_similarity = max(max_similarity, similarity)
+                if similarity > stateless_sim_threshold:
+                    similar_requests_count += 1
+
+            # Count consecutive repeats within the provided messages (from the end backwards)
+            consecutive = 0
+            for i in range(len(user_texts) - 1, 0, -1):
+                sim = calculate_similarity(user_texts[i], user_texts[i - 1])
+                if sim >= stateless_sim_threshold:
+                    consecutive += 1
+                else:
+                    break
+            stateless_repeat_count = consecutive
     
     # === Dimension 2: Topic drift ===
     topic_drift = calculate_topic_drift(recent_messages)
@@ -336,10 +450,19 @@ def analyze_behavior(project_id: str, messages: List[Dict[str, str]], model: str
     emotion_score = detect_emotion(current_user_msg)
     
     # === Dimension 4: Progress status ===
-    progress = assess_progress(
-        type('', (), {'prompt_tokens': 100, 'completion_tokens': 200, 'timestamp': datetime.now()})(), 
-        recent_requests
-    )  # Mock object for current request assessment
+    if recent_requests:
+        progress = assess_progress(
+            type('', (), {'prompt_tokens': 100, 'completion_tokens': 200, 'timestamp': datetime.now()})(),
+            recent_requests
+        )  # Mock object for current request assessment
+    else:
+        # Stateless mode: infer progress from repetition within the provided sequence
+        # For debugging flows, even 1 repeat can indicate being stuck.
+        looks_like_debug = any(k in current_user_msg.lower() for k in ["error", "bug", "exception", "traceback", "报错", "修复"])
+        if (stateless_repeat_count or 0) >= 2 or similar_requests_count >= 2 or ((stateless_repeat_count or 0) >= 1 and looks_like_debug):
+            progress = "stuck"
+        else:
+            progress = "exploring"
     
     # === Dimension 5: Task type ===
     task_type = detect_task_type(messages)
@@ -352,7 +475,10 @@ def analyze_behavior(project_id: str, messages: List[Dict[str, str]], model: str
     model_threshold = model_config["similarity_threshold"]
     
     # === Enhanced similarity counting with progressive thresholds ===
-    repeat_count = count_similar_requests(recent_requests, similarity_threshold=0.6)  # Lower threshold
+    if recent_requests:
+        repeat_count = count_similar_requests(recent_requests, similarity_threshold=0.6)  # Lower threshold
+    else:
+        repeat_count = stateless_repeat_count or 0
     
     # Use model-specific retry limits if available, otherwise fall back to task-specific limits
     max_allowed_repeats = model_config.get("max_retries", task_config["allow_iterations"])

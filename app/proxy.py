@@ -6,7 +6,7 @@ from .models import Request, get_db
 from sqlalchemy.orm import Session
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from .analyzer import analyze_behavior
 from .advisor import generate_message
 
@@ -85,10 +85,57 @@ async def proxy_request(request_body: Dict[str, Any], headers: Dict[str, str], p
             if settings.privacy.store_request_content:
                 stored_prompt_text = last_user_message
             else:
-                # If privacy is enabled, store hash of the prompt instead of actual content
-                import hashlib
-                stored_prompt_text = hashlib.sha256(last_user_message.encode()).hexdigest() if last_user_message else None
+                # If privacy is enabled, store a fingerprint instead of raw content.
+                # "hash" is treated as simhash for similarity detection (backward compatible config).
+                method = (settings.privacy.similarity_method or "hash").lower()
+                if method in ("hash", "simhash"):
+                    from .analyzer import compute_simhash_hex
+                    stored_prompt_text = compute_simhash_hex(last_user_message) if last_user_message else None
+                elif method in ("sha256", "sha-256"):
+                    import hashlib
+                    stored_prompt_text = hashlib.sha256(last_user_message.encode()).hexdigest() if last_user_message else None
+                else:
+                    # Default to simhash so analyzer can still detect repeats.
+                    from .analyzer import compute_simhash_hex
+                    stored_prompt_text = compute_simhash_hex(last_user_message) if last_user_message else None
             
+            # Check for rate limiting based on hourly total cost BEFORE storing this request
+            # This checks the cost BEFORE adding current request, so we need to add current cost
+            from .routes import calculate_equivalents
+            from .models import SessionLocal
+            
+            # Calculate total cost including current request
+            one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+            db_session = SessionLocal()
+            try:
+                recent_requests = db_session.query(Request).filter(
+                    Request.project_id == project_id,
+                    Request.timestamp > one_hour_ago
+                ).all()
+                total_hourly_cost = sum(req.total_cost_usd for req in recent_requests) + cost_usd
+            finally:
+                db_session.close()
+            
+            # Check if rate limiting should be triggered
+            if settings.advisor.enable_rate_limit and total_hourly_cost > settings.advisor.max_cost_per_hour_usd:
+                # Return 429 rate limit response
+                cost_cny = total_hourly_cost * settings.pricing.exchange_rate_usd_to_cny
+                equivalents = calculate_equivalents(cost_cny)
+                
+                return {
+                    "error": {
+                        "message": "检测到情绪化编程，建议休息20分钟",
+                        "type": "rate_limit_exceeded",
+                        "details": {
+                            "cost_usd": round(total_hourly_cost, 2),
+                            "cost_cny": round(cost_cny, 2),
+                            "equivalents": equivalents,
+                            "suggestions": ["去喝杯水", "看看官方文档", "休息一下再继续"]
+                        }
+                    }
+                }, 429
+            
+            # Store the request in database
             store_request_in_db(
                 request_id=str(uuid.uuid4()),
                 timestamp=datetime.utcnow(),
@@ -105,9 +152,9 @@ async def proxy_request(request_body: Dict[str, Any], headers: Dict[str, str], p
                 token_efficiency=(completion_tokens / prompt_tokens) if prompt_tokens > 0 else 0.0
             )
             
-            # Check for rate limiting based on cost
-            if cost_usd > settings.advisor.max_cost_per_hour_usd:
-                advisor_level = max(advisor_level, 4)  # Ensure rate limiting level if cost is exceeded
+            # Update advisor level if needed (but don't trigger rate limit here, already checked above)
+            if total_hourly_cost > settings.advisor.max_cost_per_hour_usd * 0.8:  # 80% threshold warning
+                advisor_level = max(advisor_level, 3)  # Warning level, not rate limit
             
             advisor_message = generate_message(advisor_level, cost_usd, similarity_score, model=model)
             
